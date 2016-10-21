@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="MaterialNumpad">
+        <attr name="mnp_text_color" format="color" />
+        <attr name="mnp_show_done_action" format="boolean" />
+    </declare-styleable>
+</resources>
