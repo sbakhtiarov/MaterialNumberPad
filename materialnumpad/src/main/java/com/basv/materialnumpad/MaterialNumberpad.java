@@ -4,13 +4,16 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.IntDef;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -20,39 +23,44 @@ import java.lang.annotation.RetentionPolicy;
 
 public class MaterialNumberpad extends LinearLayout {
 
-    public static final int BUTTON_0 = 0;
-    public static final int BUTTON_1 = 1;
-    public static final int BUTTON_2 = 2;
-    public static final int BUTTON_3 = 3;
-    public static final int BUTTON_4 = 4;
-    public static final int BUTTON_5 = 5;
-    public static final int BUTTON_6 = 6;
-    public static final int BUTTON_7 = 7;
-    public static final int BUTTON_8 = 8;
-    public static final int BUTTON_9 = 9;
+    public static final int BUTTON_0             = 0;
+    public static final int BUTTON_1             = 1;
+    public static final int BUTTON_2             = 2;
+    public static final int BUTTON_3             = 3;
+    public static final int BUTTON_4             = 4;
+    public static final int BUTTON_5             = 5;
+    public static final int BUTTON_6             = 6;
+    public static final int BUTTON_7             = 7;
+    public static final int BUTTON_8             = 8;
+    public static final int BUTTON_9             = 9;
     public static final int BUTTON_ACTION_DELETE = 10;
-    public static final int BUTTON_ACTION_DONE = 11;
+    public static final int BUTTON_ACTION_DONE   = 11;
 
     private static final int DEFAULT_TEXT_COLOR = Color.WHITE;
 
     private int buttonTextColor = DEFAULT_TEXT_COLOR;
-    private boolean showDoneAction = true;
 
-    private TextView button0;
-    private TextView button1;
-    private TextView button2;
-    private TextView button3;
-    private TextView button4;
-    private TextView button5;
-    private TextView button6;
-    private TextView button7;
-    private TextView button8;
-    private TextView button9;
+    private boolean showDoneAction;
+
+    private TextView  button0;
+    private TextView  button1;
+    private TextView  button2;
+    private TextView  button3;
+    private TextView  button4;
+    private TextView  button5;
+    private TextView  button6;
+    private TextView  button7;
+    private TextView  button8;
+    private TextView  button9;
     private ImageView imageActionDelete;
     private ImageView imageActionDone;
-    private View buttonActionDone;
+    private View      buttonActionDone;
+
+    private Drawable drawableActionDone;
+
 
     private OnNumpadClickListener clickListener;
+    private EditText              edittext;
 
     @Retention(RetentionPolicy.RUNTIME)
     @IntDef({BUTTON_0, BUTTON_1, BUTTON_2, BUTTON_3, BUTTON_4, BUTTON_5, BUTTON_6, BUTTON_7, BUTTON_8, BUTTON_9, BUTTON_ACTION_DELETE, BUTTON_ACTION_DONE})
@@ -60,7 +68,11 @@ public class MaterialNumberpad extends LinearLayout {
     }
 
     public interface OnNumpadClickListener {
-        void onNumpadClick(@NumpadAction int action);
+        void onNumpadClick(@NumpadAction int action, String value);
+
+        void onDoneClick(View view);
+
+        void onDeleteClick(View view);
     }
 
     public void setOnNumpadClickListener(OnNumpadClickListener clickListener) {
@@ -82,7 +94,7 @@ public class MaterialNumberpad extends LinearLayout {
 
         TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.MaterialNumpad, defStyleAttr, 0);
         buttonTextColor = a.getColor(R.styleable.MaterialNumpad_mnp_text_color, DEFAULT_TEXT_COLOR);
-        showDoneAction = a.getBoolean(R.styleable.MaterialNumpad_mnp_show_done_action, true);
+        drawableActionDone = a.getDrawable(R.styleable.MaterialNumpad_mnp_src_done_action);
         a.recycle();
 
         inflateView();
@@ -182,9 +194,20 @@ public class MaterialNumberpad extends LinearLayout {
 
         buttonActionDone = view.findViewById(R.id.button_action_done);
 
+
+        if (drawableActionDone != null) {
+            this.showDoneAction = true;
+            this.imageActionDone.setImageDrawable(drawableActionDone);
+        }
+
+
         addView(view);
 
         updateView();
+    }
+
+    public void setEdittext(EditText edittext) {
+        this.edittext = edittext;
     }
 
     private void updateView() {
@@ -194,6 +217,7 @@ public class MaterialNumberpad extends LinearLayout {
             buttonActionDone.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    clickListener.onDoneClick(buttonActionDone);
                     handleButtonClick(BUTTON_ACTION_DONE);
                 }
             });
@@ -218,8 +242,31 @@ public class MaterialNumberpad extends LinearLayout {
     }
 
     private void handleButtonClick(@NumpadAction int action) {
-        if (clickListener != null) {
-            clickListener.onNumpadClick(action);
+
+        if (clickListener == null) {
+            return;
+        }
+
+        switch (action) {
+            case MaterialNumberpad.BUTTON_0:
+            case MaterialNumberpad.BUTTON_1:
+            case MaterialNumberpad.BUTTON_2:
+            case MaterialNumberpad.BUTTON_3:
+            case MaterialNumberpad.BUTTON_4:
+            case MaterialNumberpad.BUTTON_5:
+            case MaterialNumberpad.BUTTON_6:
+            case MaterialNumberpad.BUTTON_7:
+            case MaterialNumberpad.BUTTON_8:
+            case MaterialNumberpad.BUTTON_9:
+                String val = String.valueOf(action);
+                clickListener.onNumpadClick(action, val);
+                if (edittext != null) edittext.append(val);
+                return;
+        }
+
+        if ((edittext != null && edittext.length() != 0) && action == BUTTON_ACTION_DELETE) {
+            edittext.getText()
+                    .delete(edittext.length() - 1, edittext.length());
         }
     }
 
@@ -236,12 +283,12 @@ public class MaterialNumberpad extends LinearLayout {
 
     @Override
     protected void onRestoreInstanceState(Parcelable state) {
-        if(!(state instanceof SavedState)) {
+        if (!(state instanceof SavedState)) {
             super.onRestoreInstanceState(state);
             return;
         }
 
-        SavedState ss = (SavedState)state;
+        SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
 
         this.buttonTextColor = ss.buttonTextColor;
@@ -252,7 +299,7 @@ public class MaterialNumberpad extends LinearLayout {
 
     private static class SavedState extends BaseSavedState {
 
-        private int buttonTextColor;
+        private int     buttonTextColor;
         private boolean showDoneAction;
 
         SavedState(Parcelable superState) {
