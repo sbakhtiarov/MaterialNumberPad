@@ -206,7 +206,7 @@ public class MaterialNumberpad extends LinearLayout {
         updateView();
     }
 
-    public void setEdittext(EditText edittext) {
+    public void setEditText(EditText edittext) {
         this.edittext = edittext;
     }
 

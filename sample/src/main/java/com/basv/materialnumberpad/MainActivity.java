@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity implements MaterialNumberpad
         editText = (EditText) findViewById(R.id.editText);
 
         final MaterialNumberpad numPad = (MaterialNumberpad) findViewById(R.id.numpad);
-        numPad.setEdittext(editText);
+        numPad.setEditText(editText);
         numPad.setOnNumpadClickListener(this);
     }
 
